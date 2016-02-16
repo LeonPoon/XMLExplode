@@ -3,6 +3,7 @@ Created on 14 Feb 2016
 
 @author: szeleung
 '''
+from .comp import ComponentBase
 from xml.dom import Node, XMLNS_NAMESPACE
 
 
@@ -14,14 +15,18 @@ SKIP_NS = set([XMLNS_NAMESPACE])
 
 
 
-class StringComponent(unicode):
-    pass
+class StringComponent(unicode, ComponentBase):
+
+    def writeInto(self, parentElem):
+        parentElem.appendChild(parentElem.ownerDocument.createTextNode(self))
     
-class CDataComponent(unicode):
-    pass
+class CDataComponent(unicode, ComponentBase):
+
+    def writeInto(self, parentElem):
+        parentElem.appendChild(parentElem.ownerDocument.createCDATASection(self))
 
 
-class XmlComponent(object):
+class XmlComponent(ComponentBase):
 
     def __init__(self, fromElem=None):
         '''
@@ -102,10 +107,14 @@ class XmlComponent(object):
     def getComponents(self):
         return self.components
 
-    def getFileName(self):
-        return None
-
     def getProperties(self):
         return self.properties
 
+    def isWriteTextFile(self):
+        return False
+
+    def writeInto(self, elem):
+        for (ns, name), val in self.getProperties().iteritems():
+            prefix = x.makeNamespacePrefix(elem, ns, prefered_prefix=self.mapNamespace(ns))
+            elem.setAttributeNS(ns, '%s:%s' % (prefix, name) if prefix else name, val)
 

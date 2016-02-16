@@ -7,7 +7,7 @@ Created on 14 Feb 2016
 from xml.dom import minidom
 
 import simple_xml_utils as x
-from xmlcomp import StringComponent, CDataComponent, XmlComponent 
+from xmlcomp import XmlComponent 
 
 XInclude_NS = 'http://www.w3.org/2001/XInclude'
 
@@ -43,55 +43,59 @@ class Exploder(object):
         return BasicXmlComponent(elem)
 
     def writeComponent(self, fs, comp, parentElem):
-        fileName = None
-        if isinstance(comp, StringComponent):
-            parentElem.appendChild(parentElem.ownerDocument.createTextNode(comp))
-        elif isinstance(comp, CDataComponent):
-            parentElem.appendChild(parentElem.ownerDocument.createCDATASection(comp))
-        elif comp.getFileName():
-            fs, fileName = self.writeComponentFile(fs, comp)
+        fileName = parse = None
+        if comp.getFileName():
+            fs, fileName, parse = self.writeComponentFile(fs, comp)
         else:
             self.writeComponentIntoParent(fs, comp, parentElem)
-        return fs, fileName
+        return fs, fileName, parse
 
     def writeComponentFile(self, fs, comp):
         fileName = comp.getFileName()
-
+        subFs = fs.relativeFs(comp.getSubFolderName())
+        parse = None
+        with subFs.open(fileName, 'wb') as f:
+            if comp.isWriteTextFile():
+                parse = 'text'
+                comp.writeInto(f)
+            else:
+                self.writeComponentXmlFile(subFs, comp, f)
+        return fileName, subFs, parse
+    
+    def writeComponentXmlFile(self, subFs, comp, f):
         namespaceURI = comp.getNamespaceURI()
         name = '%s:%s' % (comp.mapNamespace(namespaceURI), comp.getLocalName()) if namespaceURI else comp.getLocalName()
         dom = self.domImpl.createDocument(namespaceURI, name, None)
         elem = dom.documentElement
         x.makeNamespacePrefix(elem, namespaceURI, prefered_prefix=comp.mapNamespace(namespaceURI))
-
-        subFs = fs.relativeFs(comp.getSubFolderName())
-
-        self.writeComponentElement(comp, elem)
+        comp.writeInto(elem)
         self.writeComponents(subFs, comp, elem)
-
-        with subFs.open(fileName, 'wb') as f:
-            dom.writexml(f, encoding=self.dom.encoding)
-        return subFs, fileName
+        dom.writexml(f, encoding=self.dom.encoding)
 
     def writeComponentIntoParent(self, fs, comp, parentElem):
-        dom = parentElem.ownerDocument
-        namespaceURI = comp.getNamespaceURI()
-        prefix = x.makeNamespacePrefix(parentElem, namespaceURI, prefered_prefix=comp.mapNamespace(namespaceURI))
-        elem = dom.createElementNS(comp.getNamespaceURI(), '%s:%s' % (prefix, comp.getLocalName()) if prefix else comp.getLocalName())
-        parentElem.appendChild(elem)
-        self.writeComponentElement(comp, elem)
+        if comp.getLocalName():
+            elem = self.writeComponentElement(comp, parentElem)
+        else:
+            elem = parentElem
+            comp.writeInto(elem)
         self.writeComponents(fs, comp, elem)
-        return None, None
 
     def writeComponentElement(self, comp, elem):
-        for (ns, name), val in comp.getProperties().iteritems():
-            prefix = x.makeNamespacePrefix(elem, ns, prefered_prefix=comp.mapNamespace(ns))
-            elem.setAttributeNS(ns, '%s:%s' % (prefix, name) if prefix else name, val)
+        dom = elem.ownerDocument
+        namespaceURI = comp.getNamespaceURI()
+        prefix = x.makeNamespacePrefix(elem, namespaceURI, prefered_prefix=comp.mapNamespace(namespaceURI))
+        subElem = dom.createElementNS(comp.getNamespaceURI(), '%s:%s' % (prefix, comp.getLocalName()) if prefix else comp.getLocalName())
+        elem.appendChild(subElem)
+        comp.writeInto(subElem)
+        return subElem
 
     def writeComponents(self, fs, comp, parentElem):
         for subComp in comp.getComponents():
-            subFs, subName = self.writeComponent(fs, subComp, parentElem)
+            subFs, subName, parse = self.writeComponent(fs, subComp, parentElem)
             if subName:
                 subName = subFs.getRelativePathFrom(fs, subName)
                 elem = parentElem.ownerDocument.createElementNS(XInclude_NS, 'xi:include')
                 elem.setAttributeNS(XInclude_NS, 'xi:href', subName)
+                if parse:
+                    elem.setAttributeNS(XInclude_NS, 'xi:parse', parse)
                 parentElem.appendChild(elem)
