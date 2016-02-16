@@ -15,3 +15,6 @@ class ComponentBase(object):
 
     def getComponents(self):
         return ()
+
+    def getSubFolderName(self):
+        return '.'

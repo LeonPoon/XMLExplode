@@ -11,9 +11,12 @@ class Executable(DtsxComponent):
     classdocs
     '''
 
-    elemTagMap = {
-                  }
-
     
     def getFileName(self):
-        return 'Executable.xml'
+        return '%s.xml' % self.getLocalName()
+
+    def addComponentFromXml(self, xml):
+        self.addComponentRaw(DtsxComponent(xml))
+    
+    def getSubFolderName(self):
+        return '.'

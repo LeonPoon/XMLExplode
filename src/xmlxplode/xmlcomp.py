@@ -15,15 +15,35 @@ SKIP_NS = set([XMLNS_NAMESPACE])
 
 
 
-class StringComponent(unicode, ComponentBase):
-
-    def writeInto(self, parentElem):
-        parentElem.appendChild(parentElem.ownerDocument.createTextNode(self))
+class StringComponentBase(ComponentBase):
     
-class CDataComponent(unicode, ComponentBase):
+    def __init__(self, data):
+        self.data = data
+
+
+class StringComponent(StringComponentBase):
 
     def writeInto(self, parentElem):
-        parentElem.appendChild(parentElem.ownerDocument.createCDATASection(self))
+        parentElem.appendChild(parentElem.ownerDocument.createTextNode(self.data))
+    
+class CDataComponent(StringComponentBase):
+
+    def __init__(self, data, fileName=None, subFolderName='.'):
+        super(CDataComponent, self).__init__(data)
+        self.fileName = fileName
+        self.subFolderName = subFolderName
+
+    def getFileName(self):
+        return self.fileName
+
+    def writeInto(self, container):
+        if self.fileName:
+            container.write(self.data)
+        else:
+            container.appendChild(container.ownerDocument.createCDATASection(self.data))
+
+    def getSubFolderName(self):
+        return self.subFolderName
 
 
 class XmlComponent(ComponentBase):
@@ -100,9 +120,6 @@ class XmlComponent(ComponentBase):
 
     def getLocalName(self):
         return self.localName
-
-    def getSubFolderName(self):
-        return '.'
 
     def getComponents(self):
         return self.components
