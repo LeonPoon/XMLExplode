@@ -60,7 +60,7 @@ class Exploder(object):
                 comp.writeInto(f)
             else:
                 self.writeComponentXmlFile(subFs, comp, f)
-        return fileName, subFs, parse
+        return subFs, fileName, parse
     
     def writeComponentXmlFile(self, subFs, comp, f):
         namespaceURI = comp.getNamespaceURI()
