@@ -3,9 +3,8 @@ Created on 14 Feb 2016
 
 @author: szeleung
 '''
+import os
 
-from functools import partial
-from collections import defaultdict
 
 
 class Operator(object):
@@ -37,14 +36,19 @@ class Writer(Operator):
 class Reader(Operator):
     pass
 
-class InMemFs(defaultdict):
+class InMemFs(dict):
     '''
     classdocs
     '''
 
-    def __init__(self, parent=None):
-        super(InMemFs, self).__init__(partial(self.__class__, parent=self))
+    def __init__(self, name=None, parent=None):
+        self.name = name
         self.parent = parent
+
+    def __missing__(self, key):
+        d = self.__class__(name=key, parent=self)
+        self[key] = d
+        return d
 
     def relativeFs(self, rel):
         while True:
@@ -64,3 +68,24 @@ class InMemFs(defaultdict):
 
     def open(self, fname, mode=''):
         return (Writer if 'w' in mode else Reader)(self, fname)
+
+    def getRelativePathFrom(self, fs, subName=None):
+        if fs == self:
+            return subName if subName else '.'
+        fs = self.parent.getRelativePathFrom(fs)
+        fs = self.name if fs == '.' else '%s/%s' % (fs, self.name) 
+        return '%s/%s' % (fs, subName) if subName else fs 
+
+    def writeOut(self, dirpath):
+        for n, v in self.iteritems():
+            p = os.path.join(dirpath, n)
+            if isinstance(v, basestring):
+                print p
+                try:
+                    pass
+                finally:
+                    pass
+            else:
+                print '%s%s' % (p, os.path.sep)
+                v.writeOut(p)
+                
