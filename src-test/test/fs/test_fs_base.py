@@ -3,10 +3,9 @@ Created on 16 Feb 2016
 
 @author: szeleung
 '''
-import unittest
 
 
-class TestFsBase(unittest.TestCase):
+class TestFsBase(object):
 
 
     def setUp(self):

@@ -4,11 +4,11 @@ Created on 16 Feb 2016
 @author: szeleung
 '''
 import unittest
-from test.fs import test_fs_base
 from xmlxplode.fs.inmem import InMemFs
+from test.fs.test_fs_base import TestFsBase
 
 
-class TestInMem(test_fs_base.TestFsBase):
+class TestInMem(TestFsBase, unittest.TestCase):
 
     def setUpFs(self):
         return InMemFs()
