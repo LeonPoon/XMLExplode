@@ -9,6 +9,8 @@ from xml.dom import Node, XMLNS_NAMESPACE
 
 
 import simple_xml_utils as x
+import codecs
+from xmlxplode import BOM_LOOKUP
 
 SKIP_NS = set([XMLNS_NAMESPACE])
 
@@ -20,6 +22,9 @@ class StringComponentBase(ComponentBase):
     def __init__(self, data):
         self.data = data
 
+    def getXIncludeParseType(self):
+        return 'text'
+
 
 class StringComponent(StringComponentBase):
 
@@ -28,21 +33,29 @@ class StringComponent(StringComponentBase):
     
 class CDataComponent(StringComponentBase):
 
-    def __init__(self, data, fileName=None, subFolderName='.'):
+    def __init__(self, data, fileName=None, subFolderName='.', encoding=None):
         super(CDataComponent, self).__init__(data)
         self.fileName = fileName
         self.subFolderName = subFolderName
+        self.encoding = encoding
 
     def getFileName(self):
         return self.fileName
 
     def writeInto(self, container):
         if self.fileName:
-            container.write(self.data)
+            data = self.data
+            if self.encoding:
+                codec = codecs.lookup(self.encoding)
+                bom = BOM_LOOKUP.get(codec)
+                if bom:
+                    container.write(bom)
+                data, _ = codecs.getencoder(self.encoding)(data)
+            container.write(data)
         else:
             container.appendChild(container.ownerDocument.createCDATASection(self.data))
 
-    def getSubFolderName(self):
+    def getComponentSubPath(self):
         return self.subFolderName
 
 
@@ -87,7 +100,10 @@ class XmlComponent(ComponentBase):
         raise ValueError('%d=%s' % (nodeType, x.getNodeTypeName(nodeType)))
 
     def addComponentFromXml(self, xml):
-        self.addComponentRaw(XmlComponent(xml))
+        self.addComponentRaw(self.getComponentClass(xml)(xml))
+
+    def getComponentClass(self, xml):
+        return self.__class__
 
     def addComponentFromXmlString(self, xml):
         self.addComponentRaw(StringComponent(xml.data))
@@ -135,3 +151,5 @@ class XmlComponent(ComponentBase):
             prefix = x.makeNamespacePrefix(elem, ns, prefered_prefix=self.mapNamespace(ns))
             elem.setAttributeNS(ns, '%s:%s' % (prefix, name) if prefix else name, val)
 
+    def __str__(self, *args, **kwargs):
+        return '%s(%r)' % (ComponentBase.__str__(self, *args, **kwargs), self.getLocalName())

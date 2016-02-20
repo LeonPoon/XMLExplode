@@ -29,7 +29,7 @@ class TestExplode(unittest.TestCase):
         source = dtsx_res['Package.dtsx']('rb')
         x.explode(source, fs)
         self.assertIsInstance(fs['Executable.xml'], basestring)
-        open('/home/people/szeleung/Package2.dtsx', 'wb').write(fs['Executable.xml'])
+        #open('/home/people/szeleung/Package2.dtsx', 'wb').write(fs['Executable.xml'])
 
 
 if __name__ == "__main__":

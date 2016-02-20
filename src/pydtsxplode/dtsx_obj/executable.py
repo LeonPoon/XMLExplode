@@ -4,19 +4,13 @@ Created on 14 Feb 2016
 @author: szeleung
 '''
 
-from . import DtsxComponent
+from . import NamedDtsxComponent
 
-class Executable(DtsxComponent):
+class Executable(NamedDtsxComponent):
     '''
     classdocs
     '''
 
     
-    def getFileName(self):
-        return '%s.xml' % self.getLocalName()
-
-    def addComponentFromXml(self, xml):
-        self.addComponentRaw(DtsxComponent(xml))
-    
-    def getSubFolderName(self):
-        return '.'
+    def __init__(self, *args, **kwargs):
+        super(Executable, self).__init__((NamedDtsxComponent.defaultNamespaceURI, 'ObjectName'), *args, **kwargs)

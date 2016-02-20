@@ -4,8 +4,8 @@ class ComponentBase(object):
     def getFileName(self):
         return None
 
-    def isWriteTextFile(self):
-        return True
+    def getXIncludeParseType(self):
+        return 'xml'
 
     def writeInto(self, container):
         pass
@@ -16,5 +16,9 @@ class ComponentBase(object):
     def getComponents(self):
         return ()
 
-    def getSubFolderName(self):
+    def getComponentSubPath(self):
         return '.'
+
+    def getComponentsSubPath(self):
+        return '.'
+

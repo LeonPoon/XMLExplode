@@ -30,7 +30,7 @@ class Writer(Operator):
         self.fs[self.fname] = ''.join(self.written)
 
     def write(self, o):
-        self.written.append(o)
+        self.written.append(str(o))
 
 
 class Reader(Operator):
@@ -76,16 +76,24 @@ class InMemFs(dict):
         fs = self.name if fs == '.' else '%s/%s' % (fs, self.name) 
         return '%s/%s' % (fs, subName) if subName else fs 
 
+    def getRoot(self):
+        parent = self.parent
+        return parent.getRoot() if parent else self
+
     def writeOut(self, dirpath):
+        if not os.path.isdir(dirpath):
+            os.makedirs(dirpath) 
         for n, v in self.iteritems():
             p = os.path.join(dirpath, n)
             if isinstance(v, basestring):
-                print p
+                f = open(p, 'wb')
                 try:
-                    pass
+                    f.write(v)
                 finally:
-                    pass
-            else:
-                print '%s%s' % (p, os.path.sep)
+                    f.close()
+            elif v:
                 v.writeOut(p)
                 
+    def __str__(self):
+        root = self.getRoot()
+        return '/' if root == self else self.getRelativePathFrom(root)

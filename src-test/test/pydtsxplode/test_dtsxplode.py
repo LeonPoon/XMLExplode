@@ -28,8 +28,8 @@ class TestDtsxplode(unittest.TestCase):
         fs = InMemFs()
         source = dtsx_res['Package.dtsx']('rb')
         DtsxExploder.explode(source, fs)
-        #self.assertIsInstance(fs['Executable.xml'], basestring)
-        fs.writeOut('x')
+        self.assertIsInstance(fs['Package.xml'], basestring)
+        #fs.writeOut('/home/people/szeleung/Package3.dtsx')
 
 
 if __name__ == "__main__":
