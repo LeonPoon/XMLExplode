@@ -104,11 +104,8 @@ class FixedFileNameFileContainerDtsxComponent(FileContainerDtsxComponent):
     def __init__(self, *args, **kwargs):
         super(FixedFileNameFileContainerDtsxComponent, self).__init__(*args, **kwargs)
         
-    def getFileName(self):
-        return '%s.xml' % self.getLocalName()
-    
-    def getComponentSubPath(self):
-        return '.'
+    def addComponentFromXmlCData(self, xml):
+        self.addComponentRaw(CDataComponent(xml.data, fileName='%s.xml' % self.getLocalName()))
 
 
 
