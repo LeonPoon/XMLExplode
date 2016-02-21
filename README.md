@@ -15,10 +15,16 @@ Then:
 
     find /home/me/exploded -type f -print0 | xargs -0 file
     
+Contribute
+==========
+
+If you fixed a bug/implemented a feature beneficial for everyone, send me a pull
+request.
+    
 Licence
 =======
 
-> Copyright (C) 2016 Leon Poon
+> Copyright (C) 2016 Leon Poon and Contributors
 > 
 > This program is free software: you can redistribute it and/or modify
 > it under the terms of the GNU General Public License as published by
@@ -31,4 +37,4 @@ Licence
 > GNU General Public License for more details.
 > 
 > You should have received a copy of the [GNU General Public License](LICENSE)
-> along with this program.  If not, see <http://www.gnu.org/licenses/>
+> along with this program.  If not, see <[http://www.gnu.org/licenses/](http://www.gnu.org/licenses/)>
