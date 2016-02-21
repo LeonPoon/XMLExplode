@@ -14,6 +14,9 @@ Try:
 Then:
 
     find /home/me/exploded -type f -print0 | xargs -0 file
+
+You can use [src-test/test/res/pydtsxplode/dtsx/Package.dtsx](src-test/test/res/pydtsxplode/dtsx/Package.dtsx)
+as a sample dtsx file.
     
 Contribute
 ==========
