@@ -9,5 +9,4 @@ pydtsxplode
 
 Try:
 
-    python -m pydtsxplode -- -v /home/me/Package.dtsx /home/me/exploded
-
+    python -m pydtsxplode -- /home/me/Package.dtsx /home/me/exploded
