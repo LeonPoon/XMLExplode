@@ -90,9 +90,11 @@ class InMemFs(dict):
         parent = self.parent
         return parent.getRoot() if parent else self
 
-    def writeOut(self, dirpath):
+    def writeOut(self, dirpath, yieldFilenames=False):
         if not os.path.isdir(dirpath):
-            os.makedirs(dirpath) 
+            os.makedirs(dirpath)
+            if yieldFilenames:
+                yield '%s%s' % (dirpath, os.path.sep)
         for n, v in self.iteritems():
             p = os.path.join(dirpath, n)
             if isinstance(v, basestring):
@@ -101,8 +103,12 @@ class InMemFs(dict):
                     f.write(v)
                 finally:
                     f.close()
+                if yieldFilenames:
+                    yield p
             elif v:
-                v.writeOut(p)
+                for p in v.writeOut(p):
+                    if yieldFilenames:
+                        yield p
                 
     def __str__(self):
         root = self.getRoot()
