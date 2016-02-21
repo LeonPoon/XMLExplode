@@ -10,3 +10,7 @@ pydtsxplode
 Try:
 
     python -m pydtsxplode -- /home/me/Package.dtsx /home/me/exploded
+
+Then:
+
+    find /home/me/exploded -type f -print0 | xargs -0 file
