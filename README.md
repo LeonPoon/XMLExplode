@@ -21,6 +21,8 @@ Contribute
 If you fixed a bug/implemented a feature beneficial for everyone, send me a pull
 request.
     
+If you have an idea/suggestion, please drop me a mail/message.
+
 Licence
 =======
 
