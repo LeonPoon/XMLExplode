@@ -88,13 +88,19 @@ class DefaultRoot(object):
         self.path = path
 
     def sub(self, sub):
-        return DefaultRoot('%s%s' % (self.path, sub))
+        return self.__class__('%s%s' % (self.path, sub))
 
     def compared(self, v1, v2):
-        pass  # print '%s: %r vs %r' % (self, v1, v2)
+        pass
 
     def __str__(self):
         return self.path
+
+
+class PrintingRoot(DefaultRoot):
+
+    def compared(self, v1, v2):
+        print '%s: %r vs %r' % (self, v1, v2)
 
 
 def compare(node1, node2, path=DefaultRoot('root')):

@@ -14,8 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import unittest
+from xml.dom import minidom
 
 from test import res
+from test import xmlcompare
 from xmlxplode.fs.inmem import InMemFs
 
 dtsx_res = res.pydtsxplode.dtsx  # @UndefinedVariable
@@ -36,10 +38,11 @@ class TestExplode(unittest.TestCase):
 
     def testExplode(self):
         fs = InMemFs()
-        source = dtsx_res['Package.dtsx']('rb')
+        source = dtsx_res['Package.dtsx']('rb').read()
         x.explode(source, fs)
-        self.assertIsInstance(fs['Executable.xml'], basestring)
-        #open('/home/people/szeleung/Package2.dtsx', 'wb').write(fs['Executable.xml'])
+        xmlstr = fs['Executable.xml']
+        self.assertIsInstance(xmlstr, basestring)
+        xmlcompare.compare(minidom.parseString(xmlstr), minidom.parseString(source), xmlcompare.DefaultRoot(self.id()))
 
 
 if __name__ == "__main__":
