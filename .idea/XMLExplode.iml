@@ -4,8 +4,11 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src-test" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/src-test/test/pydtsxplode/.test_output" />
+      <excludeFolder url="file://$MODULE_DIR$/src-test/test/pydtsxplode/test_output" />
+      <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 2.7.11 virtualenv at C:\Users\szeleung\workspaces\workspace\pydtsxplode\venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

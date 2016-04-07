@@ -17,6 +17,7 @@ import unittest
 from test import res
 from xmlxplode.fs.inmem import InMemFs
 from pydtsxplode import DtsxExploder
+import os
 
 dtsx_res = res.pydtsxplode.dtsx  # @UndefinedVariable
 
@@ -38,7 +39,7 @@ class TestDtsxplode(unittest.TestCase):
         source = dtsx_res['Package.dtsx']('rb')
         DtsxExploder.explode(source, fs)
         self.assertIsInstance(fs['Package.xml'], basestring)
-        #fs.writeOut('/home/people/szeleung/Package3.dtsx')
+        # next(fs.writeOut(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.test_output')), None)
 
 
 if __name__ == "__main__":

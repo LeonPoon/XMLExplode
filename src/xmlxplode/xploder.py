@@ -19,8 +19,15 @@ from xmlcomp import XmlComponent
 import urllib
 import codecs
 from xmlxplode import BOM_MAP, BOM_LOOKUP
+from functools import partial
 
 XInclude_NS = 'http://www.w3.org/2001/XInclude'
+
+
+
+class EncodingWriter(object):
+    def __init__(self, wrapped, encoding):
+        self.write = lambda o: wrapped.write(o.encode(encoding))
 
 
 
@@ -97,7 +104,7 @@ class Exploder(object):
         self.writeComponents(subFs, subFs, comp, elem)
         if self.dom.encoding:
             f.write(BOM_LOOKUP[codecs.lookup(self.dom.encoding)])
-        dom.writexml(f, encoding=self.dom.encoding)
+        dom.writexml(EncodingWriter(f, self.dom.encoding) if self.dom.encoding else f, encoding=self.dom.encoding)
 
     def writeComponentIntoParent(self, parentFs, fs, comp, parentElem):
         if comp.getLocalName():

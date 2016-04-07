@@ -4,7 +4,7 @@
   DTS:CreationDate="2/14/2016 2:16:01 PM"
   DTS:CreationName="SSIS.Package.3"
   DTS:CreatorComputerName="ZLG"
-  DTS:CreatorName="H\szeleung"
+  DTS:CreatorName="香港\szeleung"
   DTS:DTSID="{D79D8AFC-99E1-4BB7-A3B5-58591F93B001}"
   DTS:ExecutableType="SSIS.Package.3"
   DTS:LastModifiedProductVersion="11.0.6020.0"
@@ -716,7 +716,7 @@ namespace ST_23165c50553a42e693e7bf3d05369931
 
         #region Help:  Firing Integration Services events from a script
         /* This script task can fire events for logging purposes.
-         * 
+         * 財神到
          * Example of firing an error event:
          *  Dts.Events.FireError(18, "Process Values", "Bad value", "", 0);
          * 
