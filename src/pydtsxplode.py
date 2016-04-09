@@ -20,7 +20,8 @@ from functools import partial
 from xmlxplode.xmlcomp import XmlComponent, CDataComponent
 import xmlxplode.simple_xml_utils as x
 from xmlxplode.fs.inmem import InMemFs
-
+from StringIO import StringIO
+from xmlxplode.reformat import reformat
 
 class DtsxComponent(XmlComponent):
 
@@ -165,6 +166,10 @@ class DtsxExploder(Exploder):
     def rootElement(self, elem): 
         return Executable(elem)
 
+    def writexml(self, dom, f, encoding):
+        buf = StringIO()
+        dom.writexml(buf, encoding=encoding)
+        f.write(reformat(buf.getvalue(), self.eol))
 
 def main((opts, (dtsxFile, targetDir))):
     import sys

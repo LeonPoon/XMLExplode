@@ -14,6 +14,7 @@
 
 import unittest
 from xml.dom import minidom
+import os
 
 from test import res
 from test import xmlcompare
@@ -41,6 +42,7 @@ class TestExplode(unittest.TestCase):
         x.explode(source, fs)
         xmlstr = fs['Executable.xml']
         self.assertIsInstance(xmlstr, basestring)
+        #next(fs.writeOut(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.test_output')), None)
         xmlcompare.compare(minidom.parseString(xmlstr), minidom.parseString(source), xmlcompare.DefaultRoot(self.id()))
 
 

@@ -20,6 +20,7 @@ import urllib
 import codecs
 from xmlxplode import BOM_MAP, BOM_LOOKUP
 from functools import partial
+import os
 
 XInclude_NS = 'http://www.w3.org/2001/XInclude'
 
@@ -27,7 +28,13 @@ XInclude_NS = 'http://www.w3.org/2001/XInclude'
 
 class EncodingWriter(object):
     def __init__(self, wrapped, encoding):
-        self.write = lambda o: wrapped.write(o.encode(encoding))
+        self.wrapped = wrapped
+        self.encoding = encoding
+
+    def write(self, o):
+        if isinstance(o, unicode):
+            o = o.encode(self.encoding)
+        self.wrapped.write(o)
 
 
 
@@ -104,7 +111,11 @@ class Exploder(object):
         self.writeComponents(subFs, subFs, comp, elem)
         if self.dom.encoding:
             f.write(BOM_LOOKUP[codecs.lookup(self.dom.encoding)])
-        dom.writexml(EncodingWriter(f, self.dom.encoding) if self.dom.encoding else f, encoding=self.dom.encoding)
+            f = EncodingWriter(f, self.dom.encoding)
+        self.writexml(dom, f, encoding=self.dom.encoding)
+
+    def writexml(self, dom, f, encoding):
+        dom.writexml(f, encoding=encoding)
 
     def writeComponentIntoParent(self, parentFs, fs, comp, parentElem):
         if comp.getLocalName():
