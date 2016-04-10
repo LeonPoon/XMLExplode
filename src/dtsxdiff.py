@@ -17,12 +17,48 @@ import sys
 from collections import namedtuple
 from functools import partial
 
-from pydtsxplode import DtsxExploder
+from pydtsxplode import DtsxExploder, DtsxComponent
 from xmlxplode.fs.inmem import InMemFs
 
 
 class DtsxExploderForDiff(DtsxExploder):
-    pass
+
+    DEFAULT_ID = '{........-....-....-....-............}'
+
+    def getDom(self, source):
+        dom = super(DtsxExploderForDiff, self).getDom(source)
+        m = dict()
+        self.collectDtsId(dom.documentElement, m)
+        self.replaceDtsId(dom.documentElement, m)
+        return dom
+
+    def replaceDtsId(self, elem, m):
+
+        if elem.attributes:
+            for i in range(len(elem.attributes)):
+                attr = elem.attributes.item(i)
+                if attr.value in m:
+                    attr.value = m[attr.value]
+        if elem.childNodes:
+            for elem in elem.childNodes:
+                self.replaceDtsId(elem, m)
+
+    def collectDtsId(self, elem, m):
+
+        if callable(getattr(elem, 'getAttributeNodeNS', None)):
+            attr = elem.getAttributeNodeNS(DtsxComponent.defaultNamespaceURI, 'DTSID')
+            if attr:
+                id = attr.value
+                if id in m:
+                    raise ValueError('%s: %s' % (id, m))
+                else:
+                    refId = elem.getAttributeNS(DtsxComponent.defaultNamespaceURI, 'refId')
+                    m[id] = refId
+                    attr.value = refId
+
+        if elem.childNodes:
+            for elem in elem.childNodes:
+                self.collectDtsId(elem, m)
 
 
 def getSource(filename):

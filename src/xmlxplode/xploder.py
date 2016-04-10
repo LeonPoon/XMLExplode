@@ -64,12 +64,15 @@ class Exploder(object):
         elif hasattr(source, 'read'):
             source = source.read()
         self.eol = "\r\n" if "\r\n" in source else "\n" if "\n" in source else ''
-        self.dom = minidom.parseString(source)
+        self.dom = self.getDom(source)
         for bom, codec in BOM_MAP.iteritems():
             if source.startswith(bom):
                 self.dom.encoding = codec.name
                 break
         self.domImpl = minidom.getDOMImplementation()
+
+    def getDom(self, source):
+        return minidom.parseString(source)
 
     @classmethod
     def explode(cls, source, fs):
