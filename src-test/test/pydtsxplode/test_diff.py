@@ -40,36 +40,64 @@ class TestDtsxDiff(unittest.TestCase):
         fs2 = InMemFs()
 
         fs1['dir']['file1'] = 'ab\r\nbc\r\ncd'
-        fs2['dir']['file1'] = 'ab\r\nBc\r\ncd'
+        fs2['dir']['file1'] = 'ab\r\nBc\r\ncd\n'
 
         fs1['X']['file2'] = 'X is dir\n'
         fs2['X'] = 'X is file\n'.replace('\n', os.linesep)
 
-        fs1['dir2']['file3'] = ''
-        fs2['dir3']['file3'] = ''
+        fs1['dir2']['file3'] = 'abc\nxyz\n'
+        fs1['dir2']['file4'] = ''  # empty
+
+        fs2['dir3']['file3'] = 'def\n'
+        fs2['dir3']['file4'] = ''  # empty
 
         diffs = findDiffs(['left'], fs1, ['right'], fs2)
         out = StringIO.StringIO()
         map(partial(printDiff, out=out, sep='|'), diffs)
-        out = out.getvalue().replace('\r\n', '\n').split('\n')
-        self.assertEqual(11, len(out))
-        self.assertEqual('', out[-1])
-        self.assertIn('File left|X is a directory while file right|X is a regular file', out)
-        idx = out.index('--- left|dir|file1')
+        out = out.getvalue().strip().replace('\r\n', '\n').split('\n')
+        #for o in out:
+        #    print '%r,' % o
+        self.assertEqual(len(out), len(set(out)))  # make sure all unique
+        asserted = 0
         for line in [
-                    '+++ right|dir|file1',
-                    '@@ -1,3 +1,3 @@',
-                    ' ab',
-                    '-bc',
-                    '+Bc',
-                    ' cd',
-                    'Only in left: dir2',
-                    'Only in right: dir3',
-                ]:
+            'File left|X is a directory while file right|X is a regular file',
+            'Only in left|dir2: file4',
+            'Only in right|dir3: file4',
+        ]:
+            self.assertIn(line, out)
+            asserted += 1
+        asserted += self.assertLines([
+            '--- left|dir|file1',
+            '+++ right|dir|file1',
+            '@@ -1,3 +1,3 @@',
+            ' ab',
+            '-bc',
+            '-cd',
+            '\\ No newline at end of file',
+            '+Bc',
+            '+cd',
+        ], out)
+        asserted += self.assertLines([
+            '--- left|dir2|file3',
+            '+++ /dev/null',
+            '@@ -1,2 +0,0 @@',
+            '-abc',
+            '-xyz',
+        ], out)
+        asserted += self.assertLines([
+            '--- /dev/null',
+            '+++ right|dir3|file3',
+            '@@ -0,0 +1 @@',
+            '+def',
+        ], out)
+        self.assertEqual(len(out), asserted)
+
+    def assertLines(self, lines, out):
+        idx = out.index(lines[0])
+        for line in lines[1:]:
             idx += 1
-            self.assertEquals(line, out[idx])
-        self.assertIn('Only in left: dir2', out)
-        self.assertIn('Only in right: dir3', out)
+            self.assertEqual(line, out[idx])
+        return len(lines)
 
 
 if __name__ == "__main__":

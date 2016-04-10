@@ -36,36 +36,58 @@ def getSource(filename):
     return filename, source
 
 
+def splitForDiff(s):
+    s = s.split('\n')
+    return [x + '\n' for x in s[:-1]] + ([s[-1]] if s[-1] else [])
+
+
+
+def genDiff(s1, s2, l, r, linesep=os.linesep):
+    s1 = splitForDiff(s1)
+    s2 = splitForDiff(s2)
+    for line in difflib.unified_diff(s1, s2, l, r):
+        yield line
+        if not line.endswith('\n'):
+            yield(linesep)
+            yield('\ No newline at end of file')
+            yield(linesep)
+
 
 def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     l, r = diffObj
     if not l or not r:
-        x, _ = l or r
-        out.write('Only in %s: %s' % (sep.join(x[:-1]), x[-1]))
+        parts, (typ, content) = l or r
+        if typ == 'a regular file':
+            if content:
+                diffObj = (l or EMPTY_DiffInfo, r or EMPTY_DiffInfo)
+            else:
+                out.write('Only in %s: %s' % (sep.join(parts[:-1]), parts[-1]))
+                out.write(linesep)
+                return
+        else:
+            return
+
+    (l, (tl, s1)), (r, (tr, s2)) = diffObj
+    l = sep.join(l)
+    r = sep.join(r)
+    if tl != tr:
+        out.write('File %s is %s while file %s is %s' % (l, tl, r, tr))
         out.write(linesep)
     else:
-        (l, (tl, s1)), (r, (tr, s2)) = diffObj
-        l = sep.join(l)
-        r = sep.join(r)
-        if tl != tr:
-            out.write('File %s is %s while file %s is %s' % (l, tl, r, tr))
-            out.write(linesep)
-        else:
-            s1 = reduce(lambda x, y: x + [y+'\n'], s1.split('\n'), [])
-            s2 = reduce(lambda x, y: x + [y+'\n'], s2.split('\n'), [])
-            map(out.write, difflib.unified_diff(s1, s2, l, r))
+        map(out.write, genDiff(s1, s2, l, r, linesep))
 
 
 
 Diff = namedtuple('Diff', 'left, right')
 DiffComp = namedtuple('DiffComp', 'parts, inf')
 DiffInfo = namedtuple('DiffInfo', 'type, content')
-
+EMPTY_DiffInfo = DiffComp(('/dev/null',), DiffInfo('a regular file', ''))
 
 
 def findDiffs(fn1, fs1, fn2, fs2):
     diffs = []
-    names = [(n, (fs1.nodeType(n), fs2.nodeType(n))) for n in set(fs1.keys()).union(fs2.keys())]
+    names = set(fs1.keys() if fs1 else []).union(fs2.keys() if fs2 else [])
+    names = [(n, (fs1 and fs1.nodeType(n), fs2 and fs2.nodeType(n))) for n in names]
     names.sort()
     for name, (l, r) in names:
         if l == r:
@@ -80,13 +102,17 @@ def findDiffs(fn1, fs1, fn2, fs2):
             else:
                 raise ValueError(l)
         else:
-            name = [name]
-            if not l:
-                diffs.append(Diff(None, DiffComp(fn2 + name, DiffInfo(r, None))))
-            elif not r:
-                diffs.append(Diff(DiffComp(fn1 + name, DiffInfo(l, None)), None))
-            else:  # not same type
-                diffs.append(Diff(DiffComp(fn1 + name, DiffInfo(l, None)), DiffComp(fn2 + name, DiffInfo(r, None))))
+            if l and r:  # not same type
+                diffs.append(Diff(DiffComp(fn1 + [name], DiffInfo(l, None)), DiffComp(fn2 + [name], DiffInfo(r, None))))
+            else:  # one side missing
+                typ = l or r
+                if l and fs1:
+                    l = DiffComp(fn1 + [name], DiffInfo(l, fs1[name]))
+                if r and fs2:
+                    r = DiffComp(fn2 + [name], DiffInfo(r, fs2[name]))
+                diffs.append(Diff(l, r))
+                if typ == 'a directory':
+                    diffs += findDiffs(fn1 + [name], fs1 and fs1[name], fn2 + [name], fs2 and fs2[name])
     return diffs
 
 
