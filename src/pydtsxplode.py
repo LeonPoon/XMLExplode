@@ -124,6 +124,16 @@ class FixedFileNameFileContainerDtsxComponent(FileContainerDtsxComponent):
         self.addComponentRaw(CDataComponent(xml.data, fileName='%s.xml' % self.getLocalName()))
 
 
+class Executable(NamedDtsxComponent):
+
+    COMPONENT_NAME_ATTR_NAME = (DtsxComponent.defaultNamespaceURI, 'ObjectName')
+
+    def __init__(self, fromElem, dtsxName=None):
+        super(Executable, self).__init__(self.COMPONENT_NAME_ATTR_NAME, fromElem);
+        self.dtsxName = dtsxName
+
+    def getName(self):
+        return self.dtsxName if self.dtsxName else super(Executable, self).getName()
 
 
 COMPONENT_CLASSES = {
@@ -137,7 +147,7 @@ COMPONENT_CLASSES = {
     (DtsxComponent.defaultNamespaceURI, 'EventHandlers'): ContainerDtsxComponent,
     (DtsxComponent.defaultNamespaceURI, 'EventHandler'): partial(NamedDtsxComponent, (DtsxComponent.defaultNamespaceURI, 'EventName')),
     (DtsxComponent.defaultNamespaceURI, 'Executables'): ContainerDtsxComponent,
-    (DtsxComponent.defaultNamespaceURI, 'Executable'): partial(NamedDtsxComponent, (DtsxComponent.defaultNamespaceURI, 'ObjectName')),
+    (DtsxComponent.defaultNamespaceURI, 'Executable'): Executable,
     (DtsxComponent.defaultNamespaceURI, 'PrecedenceConstraints'): ContainerDtsxComponent,
     (DtsxComponent.defaultNamespaceURI, 'DesignTimeProperties'): FixedFileNameFileContainerDtsxComponent,
     (None, 'components'): ContainerDtsxComponent,
@@ -157,14 +167,21 @@ COMPONENT_CLASSES = {
     (None, 'BinaryItem'): BinaryContainerComponent,
 }
 
-Executable = COMPONENT_CLASSES[(DtsxComponent.defaultNamespaceURI, 'Executable')]
 
 
 
 class DtsxExploder(Exploder):
-    
+
+    def __init__(self, dtsxName=None, *args, **kwargs):
+        super(DtsxExploder, self).__init__(*args, **kwargs)
+        self.dtsxName = dtsxName
+
+    @classmethod
+    def explode(cls, source, fs, dtsxName=None):
+        return cls(source=source, fs=fs, dtsxName=dtsxName)._explode()
+
     def rootElement(self, elem): 
-        return Executable(elem)
+        return Executable(elem, self.dtsxName)
 
     def writexml(self, dom, f, encoding):
         buf = StringIO()

@@ -112,3 +112,13 @@ class InMemFs(dict):
     def __str__(self):
         root = self.getRoot()
         return '/' if root == self else self.getRelativePathFrom(root)
+
+    def nodeType(self, name):
+        if name not in self:
+            return None
+        f = self[name]
+        if isinstance(f, basestring):
+            return 'a regular file'
+        if isinstance(f, dict):
+            return 'a directory'
+        return 'unknown'
