@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import difflib
-import os, sys
+import os
+import sys
 from collections import namedtuple
 from functools import partial
 
@@ -53,6 +54,10 @@ def genDiff(s1, s2, l, r, linesep=os.linesep):
             yield(linesep)
 
 
+def isPrintable(s):
+    return True  # todo
+
+
 def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     l, r = diffObj
     if not l or not r:
@@ -73,8 +78,11 @@ def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     if tl != tr:
         out.write('File %s is %s while file %s is %s' % (l, tl, r, tr))
         out.write(linesep)
-    else:
+    elif isPrintable(s1) and isPrintable(s2):
         map(out.write, genDiff(s1, s2, l, r, linesep))
+    else:
+        out.write('Binary files %s and %s differ' % (l, r))
+        out.write(linesep)
 
 
 
