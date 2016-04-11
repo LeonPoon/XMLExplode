@@ -16,7 +16,7 @@ import os
 import unittest
 from functools import partial
 
-from dtsxdiff import findDiffs, printDiff
+from dtsxdiff import findDiffs, printDiff, splitForDiff
 from test import res
 from xmlxplode.fs.inmem import InMemFs
 
@@ -34,6 +34,33 @@ class TestDtsxDiff(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_split_for_diff_no_eol(self):
+        self.assertEquals([
+            'ab\n',
+            'c',
+        ], splitForDiff('ab\nc'))
+
+    def test_split_for_diff_1_eol(self):
+        self.assertEquals([
+            'ab\n',
+            'c\n',
+        ], splitForDiff('ab\nc\n'))
+
+    def test_split_for_diff_many_eol(self):
+        self.assertEquals([
+            'ab\n',
+            'c\n',
+            '\n',
+            '\n',
+        ], splitForDiff('ab\nc\n\n\n'))
+
+    def test_split_for_diff_mixed_eol(self):
+        self.assertEquals([
+            'ab\r\n',
+            'c\n',
+            '\r\n',
+            '\n',
+        ], splitForDiff('ab\r\nc\n\r\n\n'))
 
     def testMakeDiffs(self):
         fs1 = InMemFs()
