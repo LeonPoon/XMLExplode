@@ -31,7 +31,8 @@ Do:
     python -m dtsxdiff -- /home/me/Package1.dtsx /home/you/Package2.dtsx
 
 You can redirect output into a diff file if you like. To try it out, diff the 2 packages in
-[src-test](src-test/test/res/pydtsxplode/dtsx/) and see if you can understand what was changed.
+[src-test](src-test/test/res/pydtsxplode/dtsx/) and see if you can understand what was changed. (Hint: you might want
+to skip looking at DesignTimeProperties.xml.)
 
 Contribute
 ==========
