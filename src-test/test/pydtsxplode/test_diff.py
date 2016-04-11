@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import StringIO
+import codecs
 import os
 import unittest
 from functools import partial
 
-from dtsxdiff import findDiffs, printDiff, splitForDiff
+from dtsxdiff import findDiffs, printDiff, splitForDiff, isPrintable
 from test import res
+from xmlxplode import BOM_MAP
 from xmlxplode.fs.inmem import InMemFs
 
 dtsx_res = res.pydtsxplode.dtsx  # @UndefinedVariable
@@ -62,6 +64,14 @@ class TestDtsxDiff(unittest.TestCase):
             '\n',
         ], splitForDiff('ab\r\nc\n\r\n\n'))
 
+    def test_isPrintable(self):
+        self.assertIs('abc\n\r\t', isPrintable('abc\n\r\t'))
+        self.assertEqual('\xe9\xa6\x99\xe6\xb8\xaf'.decode('utf-8'),
+                         isPrintable(codecs.BOM_UTF8 + '\xe9\xa6\x99\xe6\xb8\xaf'))
+        self.assertIsNone(isPrintable(''.join(chr(i) for i in range(20))))
+        self.assertIs('', isPrintable(''))
+        self.assertIs(u'abc', isPrintable(u'abc'))
+
     def testMakeDiffs(self):
         fs1 = InMemFs()
         fs2 = InMemFs()
@@ -71,6 +81,12 @@ class TestDtsxDiff(unittest.TestCase):
 
         fs1['X']['file2'] = 'X is dir\n'
         fs2['X'] = 'X is file\n'.replace('\n', os.linesep)
+
+        fs1['Y'] = 'binary\a'
+        fs2['Y'] = 'binary\t'
+
+        fs1['Z'] = 'binary\a'
+        fs2['Z'] = 'binary\a'
 
         fs1['dir2']['file3'] = 'abc\nxyz\n'
         fs1['dir2']['file4'] = ''  # empty
@@ -90,6 +106,7 @@ class TestDtsxDiff(unittest.TestCase):
             'File left|X is a directory while file right|X is a regular file',
             'Only in left|dir2: file4',
             'Only in right|dir3: file4',
+            'Binary files left|Y and right|Y differ',
         ]:
             self.assertIn(line, out)
             asserted += 1
@@ -117,7 +134,7 @@ class TestDtsxDiff(unittest.TestCase):
             '@@ -0,0 +1 @@',
             '+def',
         ], out)
-        self.assertEqual(len(out), asserted)
+        self.assertEqual(len(out), asserted, out)
 
     def assertLines(self, lines, out):
         idx = out.index(lines[0])

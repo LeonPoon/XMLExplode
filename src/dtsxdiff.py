@@ -13,11 +13,13 @@
 # limitations under the License.
 import difflib
 import os
+import string
 import sys
 from collections import namedtuple
 from functools import partial
 
 from pydtsxplode import DtsxExploder, DtsxComponent
+from xmlxplode import BOM_MAP
 from xmlxplode.fs.inmem import InMemFs
 
 
@@ -91,7 +93,18 @@ def genDiff(s1, s2, l, r, linesep=os.linesep):
 
 
 def isPrintable(s):
-    return True  # todo
+    if not s:
+        return s
+    if isinstance(s, unicode):
+        return s
+    for x in BOM_MAP:
+        if s.startswith(x):
+            s = s[len(x):]
+            s, _ = BOM_MAP[x].decode(s)
+            return s
+    if all(c in string.printable or c in '\r\n\t' for c in s):
+        return s
+    return None
 
 
 def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
@@ -114,11 +127,14 @@ def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     if tl != tr:
         out.write('File %s is %s while file %s is %s' % (l, tl, r, tr))
         out.write(linesep)
-    elif isPrintable(s1) and isPrintable(s2):
-        map(out.write, genDiff(s1, s2, l, r, linesep))
     else:
-        out.write('Binary files %s and %s differ' % (l, r))
-        out.write(linesep)
+        s1 = isPrintable(s1)
+        s2 = isPrintable(s2)
+        if s1 is None or s2 is None:
+            out.write('Binary files %s and %s differ' % (l, r))
+            out.write(linesep)
+        else:
+            map(out.write, genDiff(s1, s2, l, r, linesep))
 
 
 
