@@ -17,14 +17,29 @@ Then:
 
 You can use [src-test/test/res/pydtsxplode/dtsx/Package.dtsx](src-test/test/res/pydtsxplode/dtsx/Package.dtsx)
 as a sample dtsx file.
-    
+
+dtsxdiff
+--------
+
+Produces a diff of 2 dtsx files. Explodes the xml inside the files before doing recursive diff, so that the ordering of
+elements in the file does not matter. Also replaces UUIDs with something more real. Helps sanity a lot when trying to
+find out why one package work and the other doesn't, or just to know if you are committing a dtsx with unintended
+changes into source control.
+
+Do:
+
+    python -m dtsxdiff -- /home/me/Package1.dtsx /home/you/Package2.dtsx
+
+You can redirect output into a diff file if you like. To try it out, diff the 2 packages in
+[src-test](src-test/test/res/pydtsxplode/dtsx/) and find out if you like what you see.
+
 Contribute
 ==========
 
-If you fixed a bug/implemented a feature beneficial for everyone, send me a pull
+If you fixed a bug/implemented a feature beneficial for everyone, please send me a pull
 request.
     
-If you have an idea/suggestion, please drop me a mail/message.
+If you have an idea/suggestion, feel free to drop me a mail/message.
 
 Licence
 =======
