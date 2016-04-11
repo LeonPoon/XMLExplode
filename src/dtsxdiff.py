@@ -16,7 +16,9 @@ import os
 import string
 import sys
 from collections import namedtuple
+from difflib import unified_diff
 from functools import partial
+from inspect import getargspec
 
 from pydtsxplode import DtsxExploder, DtsxComponent
 from xmlxplode import BOM_MAP
@@ -80,11 +82,15 @@ def splitForDiff(s):
     return [x + '\n' for x in s[:-1]] + ([s[-1]] if s[-1] else [])
 
 
+default_unified = getargspec(unified_diff)
+default_unified = dict(zip(default_unified.args[-len(default_unified.defaults):], default_unified.defaults))
+default_unified = default_unified['n']
 
-def genDiff(s1, s2, l, r, linesep=os.linesep):
+
+def genDiff(s1, s2, l, r, unified=default_unified, linesep=os.linesep):
     s1 = splitForDiff(s1)
     s2 = splitForDiff(s2)
-    for line in difflib.unified_diff(s1, s2, l, r):
+    for line in unified_diff(s1, s2, l, r, n=unified):
         yield line
         if not line.endswith('\n'):
             yield(linesep)
@@ -107,7 +113,7 @@ def isPrintable(s):
     return None
 
 
-def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
+def printDiff(diffObj, unified=default_unified, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     l, r = diffObj
     if not l or not r:
         parts, (typ, content) = l or r
@@ -134,7 +140,7 @@ def printDiff(diffObj, out=sys.stdout, sep=os.sep, linesep=os.linesep):
             out.write('Binary files %s and %s differ' % (l, r))
             out.write(linesep)
         else:
-            map(out.write, genDiff(s1, s2, l, r, linesep))
+            map(out.write, genDiff(s1, s2, l, r, unified, linesep))
 
 
 
@@ -185,7 +191,7 @@ def main((opts, (source1, source2)), out=sys.stdout):
         DtsxExploderForDiff.explode(source1, fs1, dtsxName='Package')
         fs2 = InMemFs()
         DtsxExploderForDiff.explode(source2, fs2, dtsxName='Package')
-        map(partial(printDiff, out=out), findDiffs([fn1], fs1, [fn2], fs2))
+        map(partial(printDiff, unified=opts['unified'], out=out), findDiffs([fn1], fs1, [fn2], fs2))
 
 
 
@@ -193,10 +199,15 @@ def parseOpts(argv):
     cmd = argv[0]
     argv = argv[1:] # first arg is ourself
     import getopt
-    optlist, args = getopt.getopt(argv, '', [])
-    opts = {}
+    optlist, args = getopt.getopt(argv, 'U:', ['unified='])
+    opts = {
+        'unified': default_unified,
+    }
     for o, a in optlist:  # @UnusedVariable
-        assert False, '%s: unrecognized option %r' % (cmd, o)
+        if o == '-U' or o == '--unified':
+            opts['unified'] = int(a)
+        else:
+            assert False, '%s: unrecognized option %r' % (cmd, o)
     return opts, args
 
 
