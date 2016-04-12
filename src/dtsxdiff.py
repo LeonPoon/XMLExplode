@@ -23,6 +23,7 @@ from inspect import getargspec
 from pydtsxplode import DtsxExploder, DtsxComponent
 from xmlxplode import BOM_MAP
 from xmlxplode.fs.inmem import InMemFs
+from contextlib import contextmanager
 
 
 class DtsxExploderForDiff(DtsxExploder):
@@ -182,6 +183,26 @@ def findDiffs(fn1, fs1, fn2, fs2):
     return diffs
 
 
+@contextmanager
+def binary_mode(f):
+    '''http://stackoverflow.com/questions/10020325/make-python-stop-emitting-a-carriage-return-when-writing-newlines-to-sys-stdout'''
+    if sys.platform != "win32" or f != sys.stdout:
+        yield f
+        return
+
+    import msvcrt, os
+    def setmode(mode):
+        f.flush()
+        msvcrt.setmode(f.fileno(), mode)
+
+    setmode(os.O_BINARY)
+    try:
+        yield f
+    finally:
+        setmode(os.O_TEXT)
+
+
+
 
 def main((opts, (source1, source2)), out=sys.stdout):
     fn1, source1 = getSource(source1)
@@ -193,18 +214,19 @@ def main((opts, (source1, source2)), out=sys.stdout):
         DtsxExploderForDiff.explode(source2, fs2, dtsxName='Package')
         opened = open(opts['output'], 'wb') if 'output' in opts else None
         try:
-            if opts['encoding']:
-                enc = opts['encoding']
-                class writer(object):
-                    def __init__(self, writer):
-                        self.writer = writer
-                    def write(self, x):
-                        self.writer.write(x.encode(enc))
-                writer = writer(opened or out)
-            else:
-                writer = opened or out
-            map(partial(printDiff, unified=opts['unified'], out=writer),
-                findDiffs([fn1], fs1, [fn2], fs2))
+            with binary_mode(opened or out) as dest:
+                if opts['encoding']:
+                    enc = opts['encoding']
+                    class writer(object):
+                        def __init__(self, writer):
+                            self.writer = writer
+                        def write(self, x):
+                            self.writer.write(x.encode(enc))
+                    writer = writer(dest)
+                else:
+                    writer = dest
+                map(partial(printDiff, unified=opts['unified'], out=writer),
+                    findDiffs([fn1], fs1, [fn2], fs2))
         finally:
             if opened:
                 opened.close()
