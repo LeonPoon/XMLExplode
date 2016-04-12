@@ -191,7 +191,23 @@ def main((opts, (source1, source2)), out=sys.stdout):
         DtsxExploderForDiff.explode(source1, fs1, dtsxName='Package')
         fs2 = InMemFs()
         DtsxExploderForDiff.explode(source2, fs2, dtsxName='Package')
-        map(partial(printDiff, unified=opts['unified'], out=out), findDiffs([fn1], fs1, [fn2], fs2))
+        opened = open(opts['output'], 'wb') if 'output' in opts else None
+        try:
+            if opts['encoding']:
+                enc = opts['encoding']
+                class writer(object):
+                    def __init__(self, writer):
+                        self.writer = writer
+                    def write(self, x):
+                        self.writer.write(x.encode(enc))
+                writer = writer(opened or out)
+            else:
+                writer = opened or out
+            map(partial(printDiff, unified=opts['unified'], out=writer),
+                findDiffs([fn1], fs1, [fn2], fs2))
+        finally:
+            if opened:
+                opened.close()
 
 
 
@@ -199,13 +215,18 @@ def parseOpts(argv):
     cmd = argv[0]
     argv = argv[1:] # first arg is ourself
     import getopt
-    optlist, args = getopt.getopt(argv, 'U:', ['unified='])
+    optlist, args = getopt.getopt(argv, 'O:U:E:', ['encoding=', 'output=', 'unified='])
     opts = {
         'unified': default_unified,
+        'encoding': 'utf-8',
     }
     for o, a in optlist:  # @UnusedVariable
         if o == '-U' or o == '--unified':
             opts['unified'] = int(a)
+        elif o == '-E' or o == '--encoding':
+            opts['encoding'] = a
+        elif o == '-O' or o == '--output':
+            opts['output'] = a
         else:
             assert False, '%s: unrecognized option %r' % (cmd, o)
     return opts, args
