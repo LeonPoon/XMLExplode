@@ -89,13 +89,12 @@ default_unified = default_unified['n']
 
 
 def genDiff(s1, s2, l, r, unified=default_unified, linesep=os.linesep):
+    linesep = '%s\ No newline at end of file%s' % (linesep, linesep)
     s1 = splitForDiff(s1)
     s2 = splitForDiff(s2)
     for line in unified_diff(s1, s2, l, r, n=unified):
         yield line
         if not line.endswith('\n'):
-            yield(linesep)
-            yield('\ No newline at end of file')
             yield(linesep)
 
 
@@ -114,6 +113,14 @@ def isPrintable(s):
     return None
 
 
+def writeDiff(write, diffsGen, linesep):
+    for l in diffsGen:
+        if not l.endswith(linesep):
+            if l.endswith('\n'):
+                l = '%s%s' % (l[:-1], linesep)
+        write(l)
+
+
 def printDiff(diffObj, unified=default_unified, out=sys.stdout, sep=os.sep, linesep=os.linesep):
     l, r = diffObj
     if not l or not r:
@@ -122,8 +129,7 @@ def printDiff(diffObj, unified=default_unified, out=sys.stdout, sep=os.sep, line
             if content:
                 diffObj = (l or EMPTY_DiffInfo, r or EMPTY_DiffInfo)
             else:
-                out.write('Only in %s: %s' % (sep.join(parts[:-1]), parts[-1]))
-                out.write(linesep)
+                out.write('Only in %s: %s%s' % (sep.join(parts[:-1]), parts[-1], linesep))
                 return
         else:
             return
@@ -132,16 +138,14 @@ def printDiff(diffObj, unified=default_unified, out=sys.stdout, sep=os.sep, line
     l = sep.join(l)
     r = sep.join(r)
     if tl != tr:
-        out.write('File %s is %s while file %s is %s' % (l, tl, r, tr))
-        out.write(linesep)
+        out.write('File %s is %s while file %s is %s%s' % (l, tl, r, tr, linesep))
     else:
         s1 = isPrintable(s1)
         s2 = isPrintable(s2)
         if s1 is None or s2 is None:
-            out.write('Binary files %s and %s differ' % (l, r))
-            out.write(linesep)
+            out.write('Binary files %s and %s differ%s' % (l, r, linesep))
         else:
-            map(out.write, genDiff(s1, s2, l, r, unified, linesep))
+            writeDiff(out.write, genDiff(s1, s2, l, r, unified, linesep), linesep)
 
 
 
@@ -202,31 +206,30 @@ def binary_mode(f):
         setmode(os.O_TEXT)
 
 
+class EncodingWriter(object):
+    def __init__(self, enc, writer):
+        self.enc = enc
+        self.writer = writer
+
+    def write(self, x):
+        self.writer.write(x.encode(self.enc))
 
 
 def main((opts, (source1, source2)), out=sys.stdout):
     fn1, source1 = getSource(source1)
     fn2, source2 = getSource(source2)
     if source1 != source2:
+        dtsxName = ('dtsxName' in opts and opts['dtsxName']) or 'Package'
         fs1 = InMemFs()
-        DtsxExploderForDiff.explode(source1, fs1, dtsxName='Package')
+        DtsxExploderForDiff.explode(source1, fs1, dtsxName=dtsxName)
         fs2 = InMemFs()
-        DtsxExploderForDiff.explode(source2, fs2, dtsxName='Package')
+        DtsxExploderForDiff.explode(source2, fs2, dtsxName=dtsxName)
         opened = open(opts['output'], 'wb') if 'output' in opts else None
         try:
             with binary_mode(opened or out) as dest:
                 if opts['encoding']:
-                    enc = opts['encoding']
-                    class writer(object):
-                        def __init__(self, writer):
-                            self.writer = writer
-                        def write(self, x):
-                            self.writer.write(x.encode(enc))
-                    writer = writer(dest)
-                else:
-                    writer = dest
-                map(partial(printDiff, unified=opts['unified'], out=writer),
-                    findDiffs([fn1], fs1, [fn2], fs2))
+                    dest = EncodingWriter(opts['encoding'], dest)
+                map(partial(printDiff, unified=opts['unified'], out=dest), findDiffs([fn1], fs1, [fn2], fs2))
         finally:
             if opened:
                 opened.close()
@@ -241,6 +244,7 @@ def parseOpts(argv):
     opts = {
         'unified': default_unified,
         'encoding': 'utf-8',
+        'dtsxName': 'Package',
     }
     for o, a in optlist:  # @UnusedVariable
         if o == '-U' or o == '--unified':
