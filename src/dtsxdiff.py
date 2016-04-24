@@ -47,6 +47,8 @@ class DtsxExploderForDiff(DtsxExploder):
         if elem.childNodes:
             for elem in elem.childNodes:
                 self.replaceDtsId(elem, m)
+        if elem.nodeValue in m:
+            elem.nodeValue = m[elem.nodeValue]
 
     def collectDtsId(self, elem, m):
 
